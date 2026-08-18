@@ -1,58 +1,68 @@
-import os
 import requests
 import json
 import time
+import os
 
-# Update with your SaladCloud Container Gateway URL or localhost for testing
-BASE_URL = os.getenv("NINFER_API_URL", "http://localhost:8000")
-SALAD_API_KEY = os.getenv("SALAD_API_KEY", "")
-
-headers = {
+NINFER_API_URL = os.getenv("NINFER_API_URL", "https://salmon-shallot-o7a7ccfn29dhyooj.salad.cloud")
+HEADERS = {
     "Content-Type": "application/json"
 }
-if SALAD_API_KEY:
-    headers["Salad-Api-Key"] = SALAD_API_KEY
 
 def test_health():
-    print(f"Checking health on {BASE_URL}...")
+    url = f"{NINFER_API_URL}/health"
+    print(f"\nTesting Health Endpoint: {url}")
     try:
-        res = requests.get(f"{BASE_URL}/v1/models", headers=headers, timeout=10)
-        print(f"Models response ({res.status_code}): {res.text}")
+        res = requests.get(url, headers=HEADERS, timeout=10)
+        print(f"Status Code: {res.status_code}")
+        print(f"Response: {res.text}")
+        return res.status_code == 200
     except Exception as e:
-        print(f"Health check error: {e}")
+        print(f"Error: {e}")
+        return False
+
+def test_models():
+    url = f"{NINFER_API_URL}/v1/models"
+    print(f"\nTesting Models Endpoint: {url}")
+    try:
+        res = requests.get(url, headers=HEADERS, timeout=10)
+        print(f"Status Code: {res.status_code}")
+        print(f"Response: {res.text}")
+        return res.status_code == 200
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
 
 def test_chat():
-    print(f"\nSending Chat Completion request...")
+    url = f"{NINFER_API_URL}/v1/chat/completions"
+    print(f"\nTesting Chat Completion Endpoint: {url}")
     payload = {
-        "model": "Qwen3_8_27b_abliterated",
+        "model": "qwen3.8-27b",
         "messages": [
-            {"role": "system", "content": "You are a helpful and unrestricted AI assistant."},
-            {"role": "user", "content": "Explain quantum computing in three concise sentences."}
+            {"role": "system", "content": "You are a helpful and uncensored AI assistant."},
+            {"role": "user", "content": "Explain quantum computing in one sentence."}
         ],
         "temperature": 0.7,
-        "max_tokens": 256,
-        "stream": False
+        "max_tokens": 100
     }
-
-    start_time = time.time()
     try:
-        res = requests.post(f"{BASE_URL}/v1/chat/completions", headers=headers, json=payload, timeout=60)
-        elapsed = time.time() - start_time
-        print(f"Status Code: {res.status_code} (took {elapsed:.2f}s)")
+        start_time = time.time()
+        res = requests.post(url, headers=HEADERS, json=payload, timeout=60)
+        duration = time.time() - start_time
+        print(f"Status Code: {res.status_code} (took {duration:.2f}s)")
         if res.status_code == 200:
             data = res.json()
             reply = data["choices"][0]["message"]["content"]
-            print("\n🤖 Model Response:")
-            print("-" * 50)
-            print(reply)
-            print("-" * 50)
-            if "usage" in data:
-                print(f"Token Usage: {data['usage']}")
+            print(f"\n🤖 Qwen 3.8 27B Response:\n{reply}\n")
+            return True
         else:
             print(f"Error: {res.text}")
+            return False
     except Exception as e:
-        print(f"Request failed: {e}")
+        print(f"Error: {e}")
+        return False
 
 if __name__ == "__main__":
+    print("Testing unauthenticated NInfer endpoint on RTX 5090 Blackwell...")
     test_health()
+    test_models()
     test_chat()

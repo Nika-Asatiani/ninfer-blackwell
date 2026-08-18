@@ -1,12 +1,12 @@
 {
-  "name": "ninfer-qwen38-27b",
+  "name": "qwen27b",
   "container": {
-    "image": "ghcr.io/nika-asatiani/ninfer-blackwell:latest",
+    "image": "ghcr.io/nika-asatiani/ninfer-blackwell:sha-4cf2819",
     "resources": {
-      "cpu": 6,
+      "cpu": 8,
       "memory": 30720,
       "gpu_classes": [
-        "rtx_5090"
+        "851399fb-7329-4195-a042-d6514b28cf33"
       ],
       "storage_amount": 53687091200
     },
@@ -14,20 +14,22 @@
       "HF_REPO_ID": "fullmetaljackass/Qwen3.8-27B-Uncensored-NInfer",
       "HF_FILENAME": "Qwen3_8_27b_abliterated.ninfer",
       "PORT": "8000",
-      "HOST": "0.0.0.0",
+      "HOST": "127.0.0.1",
       "MAX_CONTEXT": "262144"
     }
   },
+  "country_codes": [
+    "us"
+  ],
   "networking": {
     "protocol": "http",
     "port": 8000,
-    "auth": true,
-    "load_balancer": "round_robin",
+    "auth": false,
+    "load_balancer": "least_number_of_connections",
     "single_connection_limit": false,
-    "client_request_timeout": 300000,
-    "server_response_timeout": 300000
+    "client_request_timeout": 100000,
+    "server_response_timeout": 100000
   },
   "restart_policy": "always",
-  "replicas": 1,
-  "country_codes": []
+  "replicas": 1
 }
