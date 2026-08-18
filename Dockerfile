@@ -41,7 +41,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1 \
     DISPLAY=:1
 
-# Install runtime libraries, X11, openbox, noVNC, websockify, NGINX, and download utilities
+# Install runtime libraries, X11, Openbox, Tint2 taskbar, xterm, noVNC, websockify, NGINX, and download utilities
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     ca-certificates \
     curl \
@@ -57,6 +57,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     xvfb \
     x11vnc \
     openbox \
+    tint2 \
+    xterm \
+    dbus-x11 \
+    x11-xserver-utils \
     novnc \
     websockify \
     nginx \
@@ -65,11 +69,13 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     && pip3 install --no-cache-dir --break-system-packages "huggingface_hub[cli]" \
     && rm -rf /var/lib/apt/lists/*
 
-# Install official Google Chrome Stable
+# Install official Google Chrome Stable and configure system alternatives
 RUN mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg && \
     echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
     apt-get update && apt-get install -y --no-install-recommends google-chrome-stable && \
+    update-alternatives --install /usr/bin/x-terminal-emulator x-terminal-emulator /usr/bin/xterm 100 && \
+    update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/bin/google-chrome-stable 200 && \
     rm -rf /var/lib/apt/lists/*
 
 # Link noVNC static files

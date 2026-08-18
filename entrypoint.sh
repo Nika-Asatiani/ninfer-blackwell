@@ -20,31 +20,39 @@ echo "================================================================="
 echo "🖥️ Initializing Virtual Display & Web GUI (noVNC + Chrome)..."
 echo "================================================================="
 
-# 1. Start Xvfb virtual framebuffer
+# 1. Start dbus daemon and Xvfb virtual framebuffer
+service dbus start || true
 export DISPLAY="${DISPLAY_NUM}"
 Xvfb ${DISPLAY_NUM} -screen 0 1920x1080x24 &
 sleep 1
 
-# 2. Start Openbox window manager
+# 2. Set modern dark wallpaper background
+xsetroot -solid "#1e1e2e" 2>/dev/null || true
+
+# 3. Start Openbox window manager
 openbox &
 
-# 3. Start x11vnc server
+# 4. Start Tint2 modern desktop taskbar panel
+tint2 &
+
+# 5. Start x11vnc server
 x11vnc -display ${DISPLAY_NUM} -nopw -forever -shared -bg -rfbport 5900 -quiet &
 
-# 4. Start Websockify bridge for noVNC
+# 6. Start Websockify bridge for noVNC
 websockify --web /usr/share/novnc 6080 127.0.0.1:5900 &
 
-# 5. Launch Google Chrome in desktop environment
+# 7. Launch Google Chrome in desktop environment
 google-chrome-stable \
     --no-sandbox \
     --disable-dev-shm-usage \
     --disable-gpu \
+    --user-data-dir=/tmp/chrome \
     --start-maximized \
     --no-first-run \
     --no-default-browser-check \
     https://www.google.com &
 
-# 6. Start NGINX reverse proxy on port 8000
+# 8. Start NGINX reverse proxy on port 8000
 echo "🌐 Starting NGINX Gateway Router on port 8000..."
 nginx
 
@@ -109,7 +117,7 @@ echo "💾 Model file is permanently cached at ${MODEL_PATH}"
 echo "================================================================="
 
 while true; do
-    echo "⚡ Launching ninfer-serve on 127.0.0.1:${NINFER_PORT}..."
+    echo "⚡ Launching ninfer-serve on 127.0.0.1:${NINFER_PORT} with MTP3 Speculative Decoding..."
     
     ninfer-serve \
         "${MODEL_PATH}" \
@@ -118,6 +126,10 @@ while true; do
         --max-context "${MAX_CONTEXT}" \
         --kv-capacity auto \
         --kv-dtype int8 \
+        --spec "${SPEC_BACKEND:-mtp}" \
+        --draft-tokens "${DRAFT_TOKENS:-3}" \
+        --lm-head-draft \
+        --prefill-chunk 4096 \
         --cors \
         "$@" || {
             EXIT_CODE=$?
