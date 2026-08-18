@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/ninfer-blackwell
+  IMAGE_NAME: nika-asatiani/ninfer-blackwell
 
 jobs:
   build-and-push:
