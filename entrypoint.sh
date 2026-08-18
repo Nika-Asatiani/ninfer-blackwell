@@ -108,5 +108,7 @@ exec ninfer-serve \
     --host "${HOST}" \
     --port "${NINFER_PORT}" \
     --max-context "${MAX_CONTEXT}" \
+    --kv-capacity auto \
+    --kv-dtype int8 \
     --cors \
     "$@"
