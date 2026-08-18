@@ -41,7 +41,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1 \
     DISPLAY=:1
 
-# Install runtime libraries, X11, Openbox, Tint2 taskbar, xterm, noVNC, websockify, NGINX, and download utilities
+# Install runtime libraries, X11, Openbox, Tint2 taskbar, xterm, ttyd web terminal, OpenSSH, noVNC, websockify, NGINX, and download utilities
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     ca-certificates \
     curl \
@@ -59,6 +59,9 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     openbox \
     tint2 \
     xterm \
+    ttyd \
+    openssh-server \
+    htop \
     dbus-x11 \
     x11-xserver-utils \
     novnc \

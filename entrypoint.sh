@@ -20,7 +20,15 @@ echo "================================================================="
 echo "🖥️ Initializing Virtual Display & Web GUI (noVNC + Chrome)..."
 echo "================================================================="
 
-# 1. Start dbus daemon and Xvfb virtual framebuffer
+# 1. Configure and start OpenSSH Server & ttyd Web Terminal
+mkdir -p /var/run/sshd
+echo "root:${ROOT_PASSWORD:-changeme_set_ROOT_PASSWORD_env}" | chpasswd
+sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config || true
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config || true
+service ssh start || true
+ttyd -W -p 7681 bash &
+
+# 2. Start dbus daemon and Xvfb virtual framebuffer
 service dbus start || true
 export DISPLAY="${DISPLAY_NUM}"
 Xvfb ${DISPLAY_NUM} -screen 0 1920x1080x24 &
