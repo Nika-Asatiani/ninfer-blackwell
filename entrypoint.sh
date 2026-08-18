@@ -99,16 +99,31 @@ if [ ! -f "${MODEL_PATH}" ] || [ ! -s "${MODEL_PATH}" ]; then
     exit 1
 fi
 
+# ==============================================================================
+# Persistent Server Supervisor (Prevents Container Exit & Avoids Re-downloads)
+# ==============================================================================
+
 echo "================================================================="
-echo "🔥 Launching ninfer-serve on 127.0.0.1:${NINFER_PORT}..."
+echo "🔥 Starting NInfer Engine Supervisor..."
+echo "💾 Model file is permanently cached at ${MODEL_PATH}"
 echo "================================================================="
 
-exec ninfer-serve \
-    "${MODEL_PATH}" \
-    --host "${HOST}" \
-    --port "${NINFER_PORT}" \
-    --max-context "${MAX_CONTEXT}" \
-    --kv-capacity auto \
-    --kv-dtype int8 \
-    --cors \
-    "$@"
+while true; do
+    echo "⚡ Launching ninfer-serve on 127.0.0.1:${NINFER_PORT}..."
+    
+    ninfer-serve \
+        "${MODEL_PATH}" \
+        --host "${HOST}" \
+        --port "${NINFER_PORT}" \
+        --max-context "${MAX_CONTEXT}" \
+        --kv-capacity auto \
+        --kv-dtype int8 \
+        --cors \
+        "$@" || {
+            EXIT_CODE=$?
+            echo "⚠️ ninfer-serve exited with code ${EXIT_CODE}."
+            echo "💾 Model file $(du -h "${MODEL_PATH}" | cut -f1) is PRESERVED on disk. No re-download needed."
+            echo "🔄 Retrying ninfer-serve in 5 seconds..."
+            sleep 5
+        }
+done
