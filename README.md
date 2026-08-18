@@ -32,7 +32,7 @@ ghcr.io/nika-asatiani/ninfer-blackwell:latest
 | `HF_FILENAME` | `Qwen3_8_27b_abliterated.ninfer` | Target `.ninfer` model file |
 | `PORT` | `8000` | HTTP API port |
 | `HOST` | `0.0.0.0` | Bind host |
-| `MAX_CONTEXT` | `32768` | Maximum context length |
+| `MAX_CONTEXT` | `262144` | Maximum context length (262K tokens) |
 | `HF_TOKEN` | *(optional)* | Access token for private/gated HF repos |
 
 ## 🧪 Testing the Endpoint

@@ -15,7 +15,7 @@
       "HF_FILENAME": "Qwen3_8_27b_abliterated.ninfer",
       "PORT": "8000",
       "HOST": "0.0.0.0",
-      "MAX_CONTEXT": "32768"
+      "MAX_CONTEXT": "262144"
     }
   },
   "networking": {
