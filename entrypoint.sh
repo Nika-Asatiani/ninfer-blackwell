@@ -73,8 +73,10 @@ echo "🔥 Launching ninfer-serve engine..."
 echo "================================================================="
 
 exec ninfer-serve \
-    --model "${MODEL_PATH}" \
+    "${MODEL_PATH}" \
     --host "${HOST}" \
     --port "${PORT}" \
     --max-context "${MAX_CONTEXT}" \
+    --cors \
     "$@"
+
