@@ -2,27 +2,59 @@
 set -e
 
 # ==============================================================================
-# NInfer SaladCloud Dynamic Boot Entrypoint
+# NInfer + Web Desktop (Chrome & noVNC) Startup Entrypoint
 # ==============================================================================
 
 MODEL_DIR="/models"
 HF_REPO_ID="${HF_REPO_ID:-fullmetaljackass/Qwen3.8-27B-Uncensored-NInfer}"
 HF_FILENAME="${HF_FILENAME:-Qwen3_8_27b_abliterated.ninfer}"
 MODEL_PATH="${MODEL_PATH:-${MODEL_DIR}/${HF_FILENAME}}"
-HOST="${HOST:-0.0.0.0}"
-PORT="${PORT:-8000}"
+HOST="127.0.0.1"
+NINFER_PORT="8080"
 MAX_CONTEXT="${MAX_CONTEXT:-262144}"
+DISPLAY_NUM=":1"
 
 mkdir -p "${MODEL_DIR}"
 
 echo "================================================================="
-echo "⚡ Starting NInfer Runtime on RTX 5090 Blackwell Architecture"
-echo "📂 Target Model File: ${MODEL_PATH}"
-echo "🌐 HF Repository:     ${HF_REPO_ID}"
-echo "🔌 Serving Port:      ${PORT}"
+echo "🖥️ Initializing Virtual Display & Web GUI (noVNC + Chrome)..."
 echo "================================================================="
 
-# Check if model already exists locally (mounted volume or persistent cache)
+# 1. Start Xvfb virtual framebuffer
+export DISPLAY="${DISPLAY_NUM}"
+Xvfb ${DISPLAY_NUM} -screen 0 1920x1080x24 &
+sleep 1
+
+# 2. Start Openbox window manager
+openbox &
+
+# 3. Start x11vnc server
+x11vnc -display ${DISPLAY_NUM} -nopw -forever -shared -bg -rfbport 5900 -quiet &
+
+# 4. Start Websockify bridge for noVNC
+websockify --web /usr/share/novnc 6080 127.0.0.1:5900 &
+
+# 5. Launch Google Chrome in desktop environment
+google-chrome-stable \
+    --no-sandbox \
+    --disable-dev-shm-usage \
+    --disable-gpu \
+    --start-maximized \
+    --no-first-run \
+    --no-default-browser-check \
+    https://www.google.com &
+
+# 6. Start NGINX reverse proxy on port 8000
+echo "🌐 Starting NGINX Gateway Router on port 8000..."
+nginx
+
+echo "================================================================="
+echo "⚡ Starting NInfer Engine on RTX 5090 Blackwell (Internal Port ${NINFER_PORT})"
+echo "📂 Target Model:   ${MODEL_PATH}"
+echo "🌐 HF Repository:  ${HF_REPO_ID}"
+echo "================================================================="
+
+# Check if model exists locally
 if [ -f "${MODEL_PATH}" ] && [ -s "${MODEL_PATH}" ]; then
     echo "✅ Model weights found at ${MODEL_PATH} ($(du -h "${MODEL_PATH}" | cut -f1))"
 else
@@ -36,7 +68,6 @@ else
         HF_TOKEN_PARAM="--token ${HF_TOKEN}"
     fi
 
-    # Download using huggingface_hub cli or aria2c fast multi-threaded chunking
     HF_URL="https://huggingface.co/${HF_REPO_ID}/resolve/main/${HF_FILENAME}"
     
     echo "🚀 Downloading ${HF_FILENAME} from ${HF_REPO_ID} via aria2c accelerated connection..."
@@ -62,21 +93,20 @@ else
     echo "✅ Download complete! File size: $(du -h "${MODEL_PATH}" | cut -f1)"
 fi
 
-# Verify model file integrity / existence
+# Verify model file integrity
 if [ ! -f "${MODEL_PATH}" ] || [ ! -s "${MODEL_PATH}" ]; then
-    echo "❌ Error: Failed to find or download valid model file at ${MODEL_PATH}"
+    echo "❌ Error: Failed to find valid model file at ${MODEL_PATH}"
     exit 1
 fi
 
 echo "================================================================="
-echo "🔥 Launching ninfer-serve engine..."
+echo "🔥 Launching ninfer-serve on 127.0.0.1:${NINFER_PORT}..."
 echo "================================================================="
 
 exec ninfer-serve \
     "${MODEL_PATH}" \
     --host "${HOST}" \
-    --port "${PORT}" \
+    --port "${NINFER_PORT}" \
     --max-context "${MAX_CONTEXT}" \
     --cors \
     "$@"
-

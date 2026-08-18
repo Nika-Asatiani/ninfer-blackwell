@@ -5,7 +5,6 @@ FROM nvidia/cuda:13.1.2-devel-ubuntu24.04 AS build
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install compilation tools and required multimedia/networking libraries
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     build-essential \
     cmake \
@@ -20,13 +19,10 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     libswscale-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone the upstream NInfer repo with submodules
 WORKDIR /src
 RUN git clone --depth 1 --recursive https://github.com/Neroued/ninfer.git /src/ninfer
 
 WORKDIR /src/ninfer
-
-# Configure with CMake for Blackwell RTX 5090 / sm_120a
 RUN cmake -S . -B /build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DNINFER_BUILD_APPS=ON \
@@ -34,21 +30,22 @@ RUN cmake -S . -B /build -G Ninja \
     -DNINFER_BUILD_BENCHMARKS=OFF \
     -DCMAKE_CUDA_ARCHITECTURES="120a"
 
-# Compile ninfer and ninfer-serve targets
 RUN cmake --build /build --parallel $(nproc) --target ninfer ninfer-serve
 
 # ==============================================================================
-# Stage 2: Minimal Production Runtime
+# Stage 2: Runtime with noVNC Desktop + Google Chrome + Nginx + NInfer
 # ==============================================================================
 FROM nvidia/cuda:13.1.2-runtime-ubuntu24.04
 
 ARG DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 \
+    DISPLAY=:1
 
-# Install runtime libraries and accelerated download tooling
+# Install runtime libraries, X11, openbox, noVNC, websockify, NGINX, and download utilities
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     ca-certificates \
     curl \
+    gnupg \
     aria2 \
     python3 \
     python3-pip \
@@ -57,8 +54,26 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     libavutil58 \
     libcurl4t64 \
     libswscale7 \
+    xvfb \
+    x11vnc \
+    openbox \
+    novnc \
+    websockify \
+    nginx \
+    fonts-liberation \
+    xdg-utils \
     && pip3 install --no-cache-dir --break-system-packages "huggingface_hub[cli]" \
     && rm -rf /var/lib/apt/lists/*
+
+# Install official Google Chrome Stable
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && apt-get install -y --no-install-recommends google-chrome-stable && \
+    rm -rf /var/lib/apt/lists/*
+
+# Link noVNC static files
+RUN ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html 2>/dev/null || true
 
 # Copy compiled binaries from build stage
 COPY --from=build /build/apps/ninfer /usr/local/bin/ninfer
@@ -66,11 +81,13 @@ COPY --from=build /build/apps/ninfer-serve /usr/local/bin/ninfer-serve
 
 WORKDIR /app
 
+# Copy NGINX configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+
 # Copy entrypoint script
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Expose HTTP API port for SaladCloud Container Gateway
 EXPOSE 8000
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=5 \
