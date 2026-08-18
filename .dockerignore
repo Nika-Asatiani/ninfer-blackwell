@@ -1,0 +1,5 @@
+*.ninfer
+.git
+.agents
+__pycache__
+*.pyc

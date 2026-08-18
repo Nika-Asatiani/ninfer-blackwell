@@ -1,0 +1,26 @@
+services:
+  ninfer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ninfer-blackwell:latest
+    container_name: ninfer-server
+    ports:
+      - "8000:8000"
+    environment:
+      - HF_REPO_ID=fullmetaljackass/Qwen3.8-27B-Uncensored-NInfer
+      - HF_FILENAME=Qwen3_8_27b_abliterated.ninfer
+      - PORT=8000
+      - HOST=0.0.0.0
+      - MAX_CONTEXT=32768
+    volumes:
+      # Mount the local .ninfer file to avoid redownloading during local testing
+      - ./Qwen3_8_27b_abliterated.ninfer:/models/Qwen3_8_27b_abliterated.ninfer:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
