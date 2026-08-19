@@ -7,7 +7,7 @@ set -e
 
 MODEL_DIR="/models"
 HF_REPO_ID="${HF_REPO_ID:-fullmetaljackass/Qwen3.8-27B-Uncensored-NInfer}"
-HF_FILENAME="${HF_FILENAME:-Qwen3_8_27b_abliterated.ninfer}"
+HF_FILENAME="${HF_FILENAME:-qwen3_8_27b_uncensored.ninfer}"
 MODEL_PATH="${MODEL_PATH:-${MODEL_DIR}/${HF_FILENAME}}"
 HOST="127.0.0.1"
 NINFER_PORT="8080"
