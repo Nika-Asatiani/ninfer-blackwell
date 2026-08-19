@@ -22,7 +22,8 @@ echo "================================================================="
 
 # 1. Configure and start OpenSSH Server & ttyd Web Terminal
 mkdir -p /var/run/sshd
-echo 'root:salad123' | chpasswd
+# ROOT_PASSWORD is injected as a secret env var via SaladCloud - never hardcode here
+echo "root:${ROOT_PASSWORD:-changeme_set_ROOT_PASSWORD_env}" | chpasswd
 sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config || true
 sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config || true
 service ssh start || true
