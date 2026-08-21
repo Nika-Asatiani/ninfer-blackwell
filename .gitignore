@@ -2,6 +2,14 @@
 .agents
 __pycache__/
 *.pyc
-.env
-secrets.json
+.env*
+secrets.*
+SALAD_LOCAL_GUIDE.md
+benchmarks/
+
+
+
+
+
+
 
