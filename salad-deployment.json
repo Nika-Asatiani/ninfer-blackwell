@@ -12,10 +12,13 @@
     },
     "environment_variables": {
       "HF_REPO_ID": "fullmetaljackass/Qwen3.8-27B-Uncensored-NInfer",
-      "HF_FILENAME": "Qwen3_8_27b_abliterated.ninfer",
+      "HF_FILENAME": "qwen3_8_27b_uncensored.ninfer",
       "PORT": "8000",
       "HOST": "127.0.0.1",
-      "MAX_CONTEXT": "262144"
+      "MAX_CONTEXT": "262144",
+      "KV_DTYPE": "bf16",
+      "DRAFT_TOKENS": "4",
+      "PREFILL_CHUNK": "8192"
     }
   },
   "country_codes": [

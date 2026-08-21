@@ -134,11 +134,11 @@ while true; do
         --port "${NINFER_PORT}" \
         --max-context "${MAX_CONTEXT}" \
         --kv-capacity auto \
-        --kv-dtype int8 \
+        --kv-dtype "${KV_DTYPE:-bf16}" \
         --spec "${SPEC_BACKEND:-mtp}" \
-        --draft-tokens "${DRAFT_TOKENS:-3}" \
+        --draft-tokens "${DRAFT_TOKENS:-4}" \
         --lm-head-draft \
-        --prefill-chunk 4096 \
+        --prefill-chunk "${PREFILL_CHUNK:-8192}" \
         --cors \
         "$@" || {
             EXIT_CODE=$?
