@@ -134,9 +134,9 @@ while true; do
         --port "${NINFER_PORT}" \
         --max-context "${MAX_CONTEXT}" \
         --kv-capacity auto \
-        --kv-dtype "${KV_DTYPE:-bf16}" \
+        --kv-dtype "${KV_DTYPE:-int8}" \
         --spec "${SPEC_BACKEND:-mtp}" \
-        --draft-tokens "${DRAFT_TOKENS:-4}" \
+        --draft-tokens "${DRAFT_TOKENS:-2}" \
         --lm-head-draft \
         --prefill-chunk "${PREFILL_CHUNK:-8192}" \
         --cors \
