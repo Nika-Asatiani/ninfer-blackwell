@@ -138,7 +138,9 @@ while true; do
         --spec "${SPEC_BACKEND:-mtp}" \
         --draft-tokens "${DRAFT_TOKENS:-4}" \
         --lm-head-draft \
-        --prefill-chunk "${PREFILL_CHUNK:-8192}" \
+        --prefill-chunk "${PREFILL_CHUNK:-16384}" \
+        --default-max-tokens "${DEFAULT_MAX_TOKENS:-24576}" \
+        ${TEMPERATURE:+--temperature "$TEMPERATURE"} \
         --cors \
         "$@" || {
             EXIT_CODE=$?

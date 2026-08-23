@@ -56,6 +56,7 @@ ghcr.io/nika-asatiani/ninfer-blackwell:latest
 | `KV_DTYPE` | `int8` | KV cache precision (`int8` for bandwidth efficiency) |
 | `DRAFT_TOKENS` | `4` | Speculative decoding MTP draft tokens |
 | `PREFILL_CHUNK` | `16384` | 16K chunked prefill token size for accelerated TTFT |
+| `DEFAULT_MAX_TOKENS` | `24576` | Default max generation token budget (24K tokens) |
 | `TEMPERATURE` | `0.5` | Sampling temperature for focused reasoning and reduced loop drift |
 | `HF_TOKEN` | *(optional)* | Access token for private/gated HF repos |
 
@@ -75,7 +76,7 @@ llm-pi-ai:
         - id: qwen3.8-27b
           name: qwen3.8-27b
           contextWindow: 194560
-          maxTokens: 16384
+          maxTokens: 24576
       apiKeyEnv: SALAD_API_KEY
 agent-default-model:
   provider: salad
