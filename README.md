@@ -56,6 +56,7 @@ ghcr.io/nika-asatiani/ninfer-blackwell:latest
 | `KV_DTYPE` | `int8` | KV cache precision (`int8` for bandwidth efficiency) |
 | `DRAFT_TOKENS` | `4` | Speculative decoding MTP draft tokens |
 | `PREFILL_CHUNK` | `16384` | 16K chunked prefill token size for accelerated TTFT |
+| `TEMPERATURE` | `0.5` | Sampling temperature for focused reasoning and reduced loop drift |
 | `HF_TOKEN` | *(optional)* | Access token for private/gated HF repos |
 
 ---
@@ -85,15 +86,16 @@ agent-default-model:
 
 ## 🧠 Reasoning & Thinking Control
 
-By default, Qwen reasoning models run at maximum reasoning depth (`xhigh`), generating long internal `<think>...</think>` traces. To enforce **medium concise thinking** or instant direct answers, use the following patterns:
+Qwen reasoning models generate internal `<think>...</think>` traces dynamically based on problem complexity. To steer the model towards concise reasoning or instant output:
 
 ### Option A: Concise Thinking System Prompt (Recommended)
-Add this system prompt to your chat client or requests:
+Add this instruction constraint to your chat client or system prompt:
 ```text
-System: "Be concise. Keep internal thinking and reasoning brief (medium depth) and jump directly into the solution without repetitive verification loops."
+System: "Be concise. Keep internal reasoning brief (under 100 words) and output the solution/tool calls directly."
 ```
 
-### Option B: API Parameter
+### Option B: Focused Sampling Parameters
+Setting a lower temperature (`0.5`) and top-p (`0.95`) prevents the model from wandering into repetitive verification loops during reasoning:
 ```json
 {
   "model": "qwen3.8-27b",
@@ -101,19 +103,8 @@ System: "Be concise. Keep internal thinking and reasoning brief (medium depth) a
     {"role": "system", "content": "Be concise. Keep internal thinking brief."},
     {"role": "user", "content": "Write an optimized C++ ring buffer."}
   ],
-  "reasoning_effort": "medium",
-  "temperature": 0.6
-}
-```
-
-### Option C: Disable Thinking (Instant Output)
-```json
-{
-  "model": "qwen3.8-27b",
-  "messages": [{"role": "user", "content": "Explain quantum decoherence."}],
-  "chat_template_kwargs": {
-    "enable_thinking": false
-  }
+  "temperature": 0.5,
+  "top_p": 0.95
 }
 ```
 

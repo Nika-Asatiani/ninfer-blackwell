@@ -18,7 +18,8 @@
       "MAX_CONTEXT": "194560",
       "KV_DTYPE": "int8",
       "DRAFT_TOKENS": "4",
-      "PREFILL_CHUNK": "16384"
+      "PREFILL_CHUNK": "16384",
+      "TEMPERATURE": "0.5"
     }
   },
   "country_codes": [
