@@ -136,7 +136,7 @@ while true; do
         --kv-capacity auto \
         --kv-dtype "${KV_DTYPE:-int8}" \
         --spec "${SPEC_BACKEND:-mtp}" \
-        --draft-tokens "${DRAFT_TOKENS:-2}" \
+        --draft-tokens "${DRAFT_TOKENS:-4}" \
         --lm-head-draft \
         --prefill-chunk "${PREFILL_CHUNK:-8192}" \
         --cors \
