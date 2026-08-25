@@ -18,7 +18,6 @@
       "MAX_CONTEXT": "235520",
       "MAX_CONCURRENCY": "1",
       "KV_DTYPE": "int8",
-      "KV_HOST_CACHE_MIB": "16384",
       "DRAFT_TOKENS": "3",
       "PREFILL_CHUNK": "4096",
       "TEMPERATURE": "0.5",

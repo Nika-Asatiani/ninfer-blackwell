@@ -136,7 +136,6 @@ while true; do
         --max-concurrency "${MAX_CONCURRENCY:-1}" \
         --kv-capacity auto \
         --kv-dtype "${KV_DTYPE:-int8}" \
-        --kv-host-cache-mib "${KV_HOST_CACHE_MIB:-16384}" \
         --spec "${SPEC_BACKEND:-mtp}" \
         --draft-tokens "${DRAFT_TOKENS:-3}" \
         --lm-head-draft \
