@@ -12,9 +12,9 @@ Containerized, ultra-high-performance runtime for serving `.ninfer` models (e.g.
 | **Speculative Acceptance Rate** | **2.5 – 3.4 tok/step** | High draft hit-rate with LM head drafting (`--lm-head-draft`) |
 | **Prefill Speed (Chunked)** | **6,500 – 8,800+ tok/s** | Accelerated via 4k chunked prefill (`--prefill-chunk 4096`) |
 | **Host KV RAM Offloading** | **16 GB RAM Pool** | Multi-turn prefix cache hits directly from system RAM (`--kv-host-cache-mib 16384`) |
-| **Context Window Capacity** | **194,560 – 262,144 tokens** | High context with INT8 KV Cache and zero OOM |
+| **Context Window Capacity** | **235,520 tokens (~230K)** | ~10% headroom below full 256K, zero-OOM INT8 KV Cache |
 | **Thinking / Reasoning Mode** | **Preserved** | Output traces preserved cleanly (`--preserve-thinking`) |
-| **VRAM Footprint** | **~17.0 – 28.0 GB / 32.0 GB** | 4+ GB headroom on RTX 5090 (32GB GDDR7) |
+| **VRAM Footprint** | **~28.5 GB / 32.0 GB** | Safe 3.5+ GB headroom on RTX 5090 (32GB GDDR7) |
 
 ---
 
@@ -54,7 +54,7 @@ ghcr.io/nika-asatiani/ninfer-blackwell:latest
 | `HF_FILENAME` | `qwen3_8_27b_uncensored.ninfer` | Target `.ninfer` model file |
 | `PORT` | `8000` | HTTP API port |
 | `HOST` | `127.0.0.1` | Internal bind host |
-| `MAX_CONTEXT` | `194560` | Maximum context length (~190K tokens) tuned for 32GB VRAM |
+| `MAX_CONTEXT` | `235520` | Maximum context length (~230K tokens, ~10% under full 256K) tuned for 32GB VRAM |
 | `MAX_CONCURRENCY` | `1` | Max concurrent streams (`1` for maximum single-user decode speed) |
 | `KV_DTYPE` | `int8` | KV cache precision (`int8` for bandwidth efficiency) |
 | `KV_HOST_CACHE_MIB`| `16384` | Host RAM KV cache pool size in MiB (16 GB for multi-session caching) |
