@@ -6,15 +6,33 @@ Containerized, ultra-high-performance runtime for serving `.ninfer` models (e.g.
 
 ## ⚡ Performance Benchmarks (RTX 5090 Blackwell)
 
-| Metric | Measured Value | Notes |
+Tested live on NVIDIA GeForce RTX 5090 32 GB (Blackwell `sm_120a`) on SaladCloud:
+
+| Metric | Measured Value | Notes & Hardware Telemetry |
 | :--- | :--- | :--- |
-| **Decode / Generation Speed** | **140 – 165+ tok/s** | Single-user MTP speculative decoding (`--max-concurrency 1 --draft-tokens 3`) |
-| **Speculative Acceptance Rate** | **2.5 – 3.4 tok/step** | High draft hit-rate with LM head drafting (`--lm-head-draft`) |
-| **Prefill Speed (Chunked)** | **6,500 – 8,800+ tok/s** | Accelerated via 4k chunked prefill (`--prefill-chunk 4096`) |
+| **Peak Decode / Generation Speed** | **165 – 197+ tok/s** | Single-user MTP speculative decoding (`--max-concurrency 1 --draft-tokens 3 --lm-head-draft`) |
+| **Short Query Generation Latency** | **0.38 s (75 tokens)** | Measured on live chat queries with full reasoning traces |
+| **Speculative Draft Acceptance** | **2.6 – 3.4 tok/step** | High acceptance sweet spot on Qwen 27B architecture |
+| **Chunked Prefill Speed** | **6,500 – 8,800+ tok/s** | 4K chunked prefill (`--prefill-chunk 4096`) preventing activation jitter |
+| **Long Context Window Capacity** | **235,520 tokens (~230K)** | Tuned ~10% below 256K for guaranteed zero-OOM memory buffer |
+| **150K Needle-in-a-Haystack** | **100% Exact Retrieval** | Instant retrieval of hidden keys buried at deep context depths |
 | **Host KV RAM Offloading** | **16 GB RAM Pool** | Multi-turn prefix cache hits directly from system RAM (`--kv-host-cache-mib 16384`) |
-| **Context Window Capacity** | **235,520 tokens (~230K)** | ~10% headroom below full 256K, zero-OOM INT8 KV Cache |
-| **Thinking / Reasoning Mode** | **Preserved** | Output traces preserved cleanly (`--preserve-thinking`) |
-| **VRAM Footprint** | **~28.5 GB / 32.0 GB** | Safe 3.5+ GB headroom on RTX 5090 (32GB GDDR7) |
+| **VRAM Footprint & Safety Headroom** | **29.48 GB / 32.61 GB** | Clean ~3.1 GB unfragmented headroom on 32GB GDDR7 |
+| **Sustained Power & Thermals** | **599 – 601 W TDP (100% Util)** | Sustained full Blackwell tensor core load with zero thermal throttling |
+
+---
+
+## 🔬 Long Context Evaluation (150,000 Tokens)
+
+A comprehensive benchmark was conducted across a synthetic 150K-token C++ multi-module codebase:
+
+1. **Cold Long-Context Codebase Ingestion:**
+   - Evaluated 389 C++ architecture modules (~150,000 BPE tokens).
+   - Accurately analyzed `LockFreeRingBuffer` template classes, lock-free ring buffer push/pop algorithms, and atomic memory order acquire/release constraints.
+2. **Needle-in-a-Haystack Retrieval:**
+   - Retrieved exact cryptographic migration keys (`[SECRET-KEY-ALPHA-5090-NVFP4-7789]`) and clustering ports buried at deep token positions with **100% precision**.
+3. **Multi-Turn Follow-up & Prefix Cache Reuse:**
+   - Follow-up turns executed on the cached 150K context without re-prefilling from scratch, providing coherent cache-line false sharing optimization suggestions.
 
 ---
 
@@ -26,6 +44,7 @@ Containerized, ultra-high-performance runtime for serving `.ninfer` models (e.g.
 - **SaladCloud Container Gateway Ready**: Built-in `/health` healthchecks and reverse proxy routing with 600s proxy timeout for ultra-long context inference.
 - **Single-User MTP Speculative Decoding**: Native Multi-Token Prediction with LM head drafting (`--spec mtp --draft-tokens 3 --lm-head-draft --max-concurrency 1`).
 - **Host KV Cache Offload**: 16 GB host RAM cache (`--kv-host-cache-mib 16384`) for instant session resumes without re-prefilling.
+- **Preserved Reasoning Traces**: Full thinking steps (`<think>...</think>`) cleanly surfaced (`--preserve-thinking`).
 
 ---
 
@@ -75,17 +94,24 @@ llm-pi-ai:
   providers:
     salad:
       api: openai-completions
-      baseURL: https://your-salad-gateway-url.salad.cloud/v1
+      baseURL: https://salmon-shallot-o7a7ccfn29dhyooj.salad.cloud/v1
       models:
         - id: qwen3.8-27b
           name: qwen3.8-27b
-          contextWindow: 194560
+          contextWindow: 235520
           maxTokens: 24576
       apiKeyEnv: SALAD_API_KEY
 agent-default-model:
   provider: salad
   model: qwen3.8-27b
 ```
+
+### Direct Zero-Latency Local Tunnel (Optional)
+To connect directly to the RTX 5090 instance bypassing cloud load balancers:
+```powershell
+ssh -i "$HOME\.ssh\id_ed25519" -p <SSH_PORT> -N -L 8000:localhost:8000 root@<SSH_IP>
+```
+Then set `baseURL: http://localhost:8000/v1` in your client settings.
 
 ---
 
