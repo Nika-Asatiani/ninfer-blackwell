@@ -1,7 +1,7 @@
 {
   "name": "qwen27b",
   "container": {
-    "image": "ghcr.io/nika-asatiani/ninfer-blackwell:sha-9cddeb0",
+    "image": "ghcr.io/nika-asatiani/ninfer-blackwell:latest",
     "resources": {
       "cpu": 8,
       "memory": 30720,
