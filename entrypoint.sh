@@ -133,13 +133,16 @@ while true; do
         --host "${HOST}" \
         --port "${NINFER_PORT}" \
         --max-context "${MAX_CONTEXT}" \
+        --max-concurrency "${MAX_CONCURRENCY:-1}" \
         --kv-capacity auto \
         --kv-dtype "${KV_DTYPE:-int8}" \
+        --kv-host-cache-mib "${KV_HOST_CACHE_MIB:-16384}" \
         --spec "${SPEC_BACKEND:-mtp}" \
-        --draft-tokens "${DRAFT_TOKENS:-4}" \
+        --draft-tokens "${DRAFT_TOKENS:-3}" \
         --lm-head-draft \
-        --prefill-chunk "${PREFILL_CHUNK:-16384}" \
+        --prefill-chunk "${PREFILL_CHUNK:-4096}" \
         --default-max-tokens "${DEFAULT_MAX_TOKENS:-24576}" \
+        --preserve-thinking \
         ${TEMPERATURE:+--temperature "$TEMPERATURE"} \
         --cors \
         "$@" || {

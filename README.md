@@ -8,12 +8,13 @@ Containerized, ultra-high-performance runtime for serving `.ninfer` models (e.g.
 
 | Metric | Measured Value | Notes |
 | :--- | :--- | :--- |
-| **Decode / Generation Speed** | **130 – 165+ tok/s** | Multi-Token Prediction (MTP) Speculative Decoding on 27B model |
-| **Speculative Acceptance Rate** | **3.40 – 3.80 tok/round** | ~60% – 70% draft acceptance rate (`--draft-tokens 4`) |
-| **Prefill Speed (Chunked)** | **2,400 – 2,700 tok/s** | Accelerated via 16k chunked prefill (`--prefill-chunk 16384`) |
-| **Context Window Capacity** | **194,560 tokens (~190K)** | Zero-OOM stable high context with INT8 KV Cache |
-| **KV Prefix Cache Reuse** | **Sub-second TTFT** | Instant attention prefix reuse (`reuse=append_frontier`) |
-| **VRAM Footprint** | **28.08 GB / 32.00 GB** | Clean 4.5+ GB headroom on RTX 5090 (32GB GDDR7) |
+| **Decode / Generation Speed** | **140 – 165+ tok/s** | Single-user MTP speculative decoding (`--max-concurrency 1 --draft-tokens 3`) |
+| **Speculative Acceptance Rate** | **2.5 – 3.4 tok/step** | High draft hit-rate with LM head drafting (`--lm-head-draft`) |
+| **Prefill Speed (Chunked)** | **6,500 – 8,800+ tok/s** | Accelerated via 4k chunked prefill (`--prefill-chunk 4096`) |
+| **Host KV RAM Offloading** | **16 GB RAM Pool** | Multi-turn prefix cache hits directly from system RAM (`--kv-host-cache-mib 16384`) |
+| **Context Window Capacity** | **194,560 – 262,144 tokens** | High context with INT8 KV Cache and zero OOM |
+| **Thinking / Reasoning Mode** | **Preserved** | Output traces preserved cleanly (`--preserve-thinking`) |
+| **VRAM Footprint** | **~17.0 – 28.0 GB / 32.0 GB** | 4+ GB headroom on RTX 5090 (32GB GDDR7) |
 
 ---
 
@@ -23,7 +24,8 @@ Containerized, ultra-high-performance runtime for serving `.ninfer` models (e.g.
 - **Dynamic Weight Pulling**: Weights (`qwen3_8_27b_uncensored.ninfer`, ~18.2 GB) are pulled directly at container boot from Hugging Face into memory/disk via accelerated `aria2c` multi-threaded downloading.
 - **OpenAI Compatible API**: Exposes standard `/v1/chat/completions` and `/v1/models` on port `8000`.
 - **SaladCloud Container Gateway Ready**: Built-in `/health` healthchecks and reverse proxy routing with 600s proxy timeout for ultra-long context inference.
-- **MTP Speculative Decoding**: Native Multi-Token Prediction with LM head drafting (`--spec mtp --draft-tokens 4 --lm-head-draft`).
+- **Single-User MTP Speculative Decoding**: Native Multi-Token Prediction with LM head drafting (`--spec mtp --draft-tokens 3 --lm-head-draft --max-concurrency 1`).
+- **Host KV Cache Offload**: 16 GB host RAM cache (`--kv-host-cache-mib 16384`) for instant session resumes without re-prefilling.
 
 ---
 
@@ -53,9 +55,11 @@ ghcr.io/nika-asatiani/ninfer-blackwell:latest
 | `PORT` | `8000` | HTTP API port |
 | `HOST` | `127.0.0.1` | Internal bind host |
 | `MAX_CONTEXT` | `194560` | Maximum context length (~190K tokens) tuned for 32GB VRAM |
+| `MAX_CONCURRENCY` | `1` | Max concurrent streams (`1` for maximum single-user decode speed) |
 | `KV_DTYPE` | `int8` | KV cache precision (`int8` for bandwidth efficiency) |
-| `DRAFT_TOKENS` | `4` | Speculative decoding MTP draft tokens |
-| `PREFILL_CHUNK` | `16384` | 16K chunked prefill token size for accelerated TTFT |
+| `KV_HOST_CACHE_MIB`| `16384` | Host RAM KV cache pool size in MiB (16 GB for multi-session caching) |
+| `DRAFT_TOKENS` | `3` | Speculative decoding MTP draft tokens (sweet spot for Qwen 27B) |
+| `PREFILL_CHUNK` | `4096` | 4K chunked prefill token size for accelerated TTFT & low activation jitter |
 | `DEFAULT_MAX_TOKENS` | `24576` | Default max generation token budget (24K tokens) |
 | `TEMPERATURE` | `0.5` | Sampling temperature for focused reasoning and reduced loop drift |
 | `HF_TOKEN` | *(optional)* | Access token for private/gated HF repos |
