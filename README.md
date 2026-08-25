@@ -11,20 +11,48 @@ Tested live on NVIDIA GeForce RTX 5090 32 GB (Blackwell `sm_120a`) on SaladCloud
 | Metric | Measured Value | Notes & Hardware Telemetry |
 | :--- | :--- | :--- |
 | **Peak Decode / Generation Speed** | **165 – 197+ tok/s** | Single-user MTP speculative decoding (`--max-concurrency 1 --draft-tokens 3 --lm-head-draft`) |
-| **Short Query Generation Latency** | **0.38 s (75 tokens)** | Measured on live chat queries with full reasoning traces |
-| **Speculative Draft Acceptance** | **2.6 – 3.4 tok/step** | High acceptance sweet spot on Qwen 27B architecture |
-| **Chunked Prefill Speed** | **6,500 – 8,800+ tok/s** | 4K chunked prefill (`--prefill-chunk 4096`) preventing activation jitter |
+| **Sustained Real-World Agent Decode** | **142 – 188+ tok/s** | Measured across continuous 75-request live harness sessions up to 188K context |
+| **Short Query Generation Latency** | **0.34 – 0.38 s (75 tokens)** | Sub-second response on live chat/tool queries with full reasoning traces |
+| **Speculative Draft Acceptance** | **2.7 – 3.8 tok/round** | Optimal acceptance rate on Qwen 27B architecture with K=3 draft tokens |
+| **Chunked Prefill Throughput** | **6,500 – 8,800+ tok/s** | 4K chunked prefill (`--prefill-chunk 4096`) preventing activation jitter |
 | **Long Context Window Capacity** | **235,520 tokens (~230K)** | Tuned ~10% below 256K for guaranteed zero-OOM memory buffer |
+| **Max Context Reached in Session** | **188,265 tokens (~188K)** | Flawless multi-turn agent tool execution at 188K depth |
+| **Multi-Turn Prefix Cache Hit Rate** | **> 98% Cache Reuse** | Instant sub-second TTFT (~170–450 ms) on consecutive agent turns |
 | **150K Needle-in-a-Haystack** | **100% Exact Retrieval** | Instant retrieval of hidden keys buried at deep context depths |
-| **Host KV RAM Offloading** | **16 GB RAM Pool** | Multi-turn prefix cache hits directly from system RAM (`--kv-host-cache-mib 16384`) |
-| **VRAM Footprint & Safety Headroom** | **29.48 GB / 32.61 GB** | Clean ~3.1 GB unfragmented headroom on 32GB GDDR7 |
-| **Sustained Power & Thermals** | **599 – 601 W TDP (100% Util)** | Sustained full Blackwell tensor core load with zero thermal throttling |
+| **VRAM Footprint & Safety Headroom** | **27.1 – 27.7 GB / 32.6 GB** | Clean ~4.9+ GB unfragmented headroom on 32GB GDDR7 |
+| **Sustained Power & Thermals** | **574 – 601 W TDP / 59°C** | Sustained full Blackwell tensor core compute without thermal throttling |
+
+---
+
+## 📊 Real-World Agent Workload Telemetry (DeepSeek Harness Session)
+
+The following metrics were captured during a continuous 20-minute, 75-request live agent coding and tool-calling workload scaling from **44K context to 188K tokens**:
+
+### Context Scaling vs. Generation Speed
+
+| Context Window Range | Sample Requests | Avg TTFT (Cached Turns) | Avg Decode Speed | MTP Draft Acceptance | VRAM Allocated |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **40K – 75K Tokens** | Req #11 – #21 | **~200 – 700 ms** | **175.4 tok/s** | **3.15 tok/round** (70%) | 26.9 GB |
+| **75K – 120K Tokens** | Req #22 – #35 | **~250 – 900 ms** | **164.2 tok/s** | **3.08 tok/round** (68%) | 27.0 GB |
+| **120K – 150K Tokens** | Req #36 – #53 | **~300 – 600 ms** | **161.7 tok/s** | **3.22 tok/round** (72%) | 27.1 GB |
+| **150K – 188K Tokens** | Req #54 – #81 | **~340 – 450 ms** | **160.1 tok/s** | **3.31 tok/round** (74%) | 27.1 GB |
+
+### Key Workload Observations:
+1. **Near-Flat Decode Curve Across 188K Context:**
+   - Generation speed at **44K context** was **~170–180 tok/s**.
+   - Even at **188K context (Req #81)**, decode speed stayed at **173.1 tok/s**, demonstrating virtually zero degradation as context grew 4×.
+2. **Massive Generation Stress Tests:**
+   - Single-request generation sustained up to **7,050 output tokens** in a single turn (Req #76) at **142.7 tok/s** without memory leaks or degradation.
+3. **Sub-Second TTFT via Attention Reuse (`reuse=append_frontier`):**
+   - At Req #80 (**187,843 tokens context**), TTFT was only **411 ms** because **187,787 tokens** were instantly reused from the prefix cache.
+4. **Context Compaction Recovery:**
+   - Following a full 146K context compaction reset (Req #82), the next turn (Req #83) instantly locked onto the new prefix cache, achieving a **307 ms TTFT** and generating 1,579 tokens in 11.8s.
 
 ---
 
 ## 🔬 Long Context Evaluation (150,000 Tokens)
 
-A comprehensive benchmark was conducted across a synthetic 150K-token C++ multi-module codebase:
+A dedicated benchmark was conducted across a synthetic 150K-token C++ multi-module codebase:
 
 1. **Cold Long-Context Codebase Ingestion:**
    - Evaluated 389 C++ architecture modules (~150,000 BPE tokens).
@@ -43,7 +71,6 @@ A comprehensive benchmark was conducted across a synthetic 150K-token C++ multi-
 - **OpenAI Compatible API**: Exposes standard `/v1/chat/completions` and `/v1/models` on port `8000`.
 - **SaladCloud Container Gateway Ready**: Built-in `/health` healthchecks and reverse proxy routing with 600s proxy timeout for ultra-long context inference.
 - **Single-User MTP Speculative Decoding**: Native Multi-Token Prediction with LM head drafting (`--spec mtp --draft-tokens 3 --lm-head-draft --max-concurrency 1`).
-- **Host KV Cache Offload**: 16 GB host RAM cache (`--kv-host-cache-mib 16384`) for instant session resumes without re-prefilling.
 - **Preserved Reasoning Traces**: Full thinking steps (`<think>...</think>`) cleanly surfaced (`--preserve-thinking`).
 
 ---
@@ -76,7 +103,6 @@ ghcr.io/nika-asatiani/ninfer-blackwell:latest
 | `MAX_CONTEXT` | `235520` | Maximum context length (~230K tokens, ~10% under full 256K) tuned for 32GB VRAM |
 | `MAX_CONCURRENCY` | `1` | Max concurrent streams (`1` for maximum single-user decode speed) |
 | `KV_DTYPE` | `int8` | KV cache precision (`int8` for bandwidth efficiency) |
-| `KV_HOST_CACHE_MIB`| `16384` | Host RAM KV cache pool size in MiB (16 GB for multi-session caching) |
 | `DRAFT_TOKENS` | `3` | Speculative decoding MTP draft tokens (sweet spot for Qwen 27B) |
 | `PREFILL_CHUNK` | `4096` | 4K chunked prefill token size for accelerated TTFT & low activation jitter |
 | `DEFAULT_MAX_TOKENS` | `24576` | Default max generation token budget (24K tokens) |
